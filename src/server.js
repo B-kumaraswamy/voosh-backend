@@ -8,18 +8,32 @@ import sessionsRouter from "./routes/sessions.js";
 import Redis from "ioredis";
 
 const app = express();
-const FRONTEND_ORIGIN = process.env.FRONTEND_ORIGIN || "http://localhost:5173";
+
+// FRONTEND_ORIGIN may be a single origin or comma-separated list:
+// e.g. "https://voosh-frontend-theta.vercel.app,http://localhost:5173"
+const FRONTEND_ORIGIN = process.env.FRONTEND_ORIGIN || "";
+const ALLOWED_ORIGINS = FRONTEND_ORIGIN.split(",").map(s => s.trim()).filter(Boolean);
+
 app.use(
   cors({
-    origin: FRONTEND_ORIGIN,
+    origin: function (origin, callback) {
+      // allow requests with no origin (curl, server-to-server)
+      if (!origin) return callback(null, true);
+      // if no allowed origins configured, allow (use with caution)
+      if (ALLOWED_ORIGINS.length === 0) return callback(null, true);
+      if (ALLOWED_ORIGINS.includes(origin)) return callback(null, true);
+      return callback(new Error("Not allowed by CORS"));
+    },
     methods: ["GET", "POST", "OPTIONS", "DELETE", "PUT", "PATCH"],
-    allowedHeaders: ["Content-Type"],
+    allowedHeaders: ["Content-Type", "Authorization"],
     preflightContinue: false,
   })
 );
+
 app.use(bodyParser.json({ limit: "1mb" }));
 
 app.get("/health", (req, res) => res.json({ ok: true }));
+
 app.use("/chat", chatRoute);
 app.use("/sessions", sessionsRouter);
 
@@ -27,24 +41,30 @@ app.use("/sessions", sessionsRouter);
 async function runStartupChecks() {
   const out = { redis: { ok: false, msg: null }, prisma: { ok: false, msg: null } };
 
-  // Redis check (robust)
+  // Redis check (only if REDIS_URL provided)
   try {
     const redisUrl = process.env.REDIS_URL || "";
-    const r = new Redis(redisUrl, { lazyConnect: true });
-    try {
-      await r.connect(); // throws on failure
-      const pong = await r.ping();
-      if (pong && String(pong).toLowerCase().includes("pong")) {
-        out.redis.ok = true;
-        out.redis.msg = `Connected to Redis at ${redisUrl}`;
-      } else {
-        out.redis.msg = `Redis ping returned: ${String(pong)}`;
-      }
-    } catch (connErr) {
+    if (!redisUrl) {
       out.redis.ok = false;
-      out.redis.msg = `Redis connect/ping failed: ${connErr?.message || connErr}`;
-    } finally {
-      try { await r.disconnect(); } catch (_) {}
+      out.redis.msg = "REDIS_URL not set - running without Redis (cache-only).";
+    } else {
+      const r = new Redis(redisUrl, { lazyConnect: true });
+      try {
+        await r.connect();
+        const pong = await r.ping();
+        if (pong && String(pong).toLowerCase().includes("pong")) {
+          out.redis.ok = true;
+          out.redis.msg = `Connected to Redis at ${redisUrl}`;
+        } else {
+          out.redis.ok = false;
+          out.redis.msg = `Redis ping returned: ${String(pong)}`;
+        }
+      } catch (connErr) {
+        out.redis.ok = false;
+        out.redis.msg = `Redis connect/ping failed: ${connErr?.message || connErr}`;
+      } finally {
+        try { await r.disconnect(); } catch (_) {}
+      }
     }
   } catch (e) {
     out.redis.ok = false;
