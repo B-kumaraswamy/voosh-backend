@@ -1,0 +1,14 @@
+[
+  {
+    "title": "Local team wins final",
+    "url": "http://example.com/news/local-team",
+    "publishedAt": "2025-09-01T10:00:00Z",
+    "text": "The local team won their final in a dramatic fashion. Full match report..."
+  },
+  {
+    "title": "Economy grows 3% this quarter",
+    "url": "http://example.com/news/economy",
+    "publishedAt": "2025-09-02T09:00:00Z",
+    "text": "The economy expanded by 3% in this quarter, driven by increased consumer spending..."
+  }
+]

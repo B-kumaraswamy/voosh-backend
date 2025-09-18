@@ -1,0 +1,35 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model Session {
+  id        String      @id @default(uuid())
+  title     String?     // optional human-friendly title
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @updatedAt
+  transcripts Transcript[]
+}
+
+model Transcript {
+  id         String   @id @default(uuid())
+  sessionId  String
+  session    Session  @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  role       String   // "user" or "assistant"
+  content    String
+  createdAt  DateTime @default(now())
+}
+
+
+model Article {
+  id          String   @id @default(uuid())
+  title       String
+  url         String   @unique
+  source      String?
+  publishedAt DateTime?
+  createdAt   DateTime @default(now())
+}
