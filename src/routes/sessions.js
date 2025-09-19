@@ -20,6 +20,7 @@ router.get('/', async (req, res) => {
       lastAt: s.lastAt || s.updatedAt || null,
       msgCount: (s.msgCount != null ? s.msgCount : (Array.isArray(s.messages) ? s.messages.length : 0)),
     }));
+    console.log(`🚀 > payload---->`, payload)
     res.json({ result: payload });
   } catch (err) {
     console.error('GET /sessions err', err);
@@ -36,7 +37,7 @@ router.post('/', async (req, res) => {
     const id = uuidv4();
     // create session in store
     if (sessionStore.createSession) {
-      await sessionStore.createSession({ id, createdAt: Date.now(), title: req.body?.title || null });
+      await sessionStore.createSession({ id, createdAt: Date.now(), title: `Chat ${new Date().toLocaleString()}` });
     } else {
       // fallback: append a metadata message or ensure store initializes session on first append
       await sessionStore.appendMessage(id, { role: 'system', text: 'session-created', ts: Date.now() });

@@ -12,7 +12,6 @@ const app = express();
 // FRONTEND_ORIGIN may be a single origin or comma-separated list:
 // e.g. "https://voosh-frontend-theta.vercel.app,http://localhost:5173"
 const FRONTEND_ORIGIN = process.env.FRONTEND_ORIGIN || "";
-const ALLOWED_ORIGINS = FRONTEND_ORIGIN.split(",").map(s => s.trim()).filter(Boolean);
 
 app.use(
   cors({
@@ -20,8 +19,7 @@ app.use(
       // allow requests with no origin (curl, server-to-server)
       if (!origin) return callback(null, true);
       // if no allowed origins configured, allow (use with caution)
-      if (ALLOWED_ORIGINS.length === 0) return callback(null, true);
-      if (ALLOWED_ORIGINS.includes(origin)) return callback(null, true);
+      if (origin === FRONTEND_ORIGIN) return callback(null, true);
       return callback(new Error("Not allowed by CORS"));
     },
     methods: ["GET", "POST", "OPTIONS", "DELETE", "PUT", "PATCH"],

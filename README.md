@@ -125,10 +125,10 @@ Follow these steps to set up the backend in your local environment without using
 You can also use Docker for a containerized local development environment.
 
 1. **Start Services with Docker Compose**
-   If you have a `docker-compose.yml` file, run the following to start Postgres, Redis, and Qdrant containers locally:
+   If you have a `docker-compose.yml` file, run the following to start Postgres, Redis, and Qdrant containers locally in the directory cd backend/docker:
 
    ```bash
-   docker-compose up -d
+   docker-compose up
    ```
 
 
